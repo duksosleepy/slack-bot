@@ -3,11 +3,19 @@
   "version": "1.0.0",
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "A feature-rich Slack bot built with the Bolt.js framework",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4"
+    "@biomejs/biome": "1.9.4",
+    "dotenv": "^16.5.0",
+    "nodemon": "^3.1.9"
   },
   "dependencies": {
-    "@slack/bolt": "^4.2.1"
+    "@slack/bolt": "^4.2.1",
+    "dify-client": "^2.3.2"
   }
 }
