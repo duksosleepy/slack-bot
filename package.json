@@ -1,0 +1,13 @@
+{
+  "name": "slack-bot-dify",
+  "version": "1.0.0",
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4"
+  },
+  "dependencies": {
+    "@slack/bolt": "^4.2.1"
+  }
+}
