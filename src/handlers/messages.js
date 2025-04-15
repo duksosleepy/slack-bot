@@ -2,12 +2,30 @@
 const difyService = require("../utils/difyService");
 const blockKit = require("../utils/blockKit");
 
+// Track handled message IDs to prevent duplicate processing
+const handledMessages = new Set();
+
+// Clean up old handled messages (keep only recent ones)
+setInterval(() => {
+	// Keep only 100 most recent messages
+	if (handledMessages.size > 100) {
+		const toRemove = handledMessages.size - 100;
+		const iterator = handledMessages.values();
+		for (let i = 0; i < toRemove; i++) {
+			handledMessages.delete(iterator.next().value);
+		}
+	}
+}, 60000); // Clean up every minute
+
 module.exports = (app) => {
 	// Listen for messages that contain "hello"
-	app.message("hello", async ({ message, say }) => {
+	app.message(/\bhello\b|\bhi\b|\bhey\b/i, async ({ message, say }) => {
 		try {
 			// Only respond to messages from users, not the bot itself
 			if (message.subtype === undefined || message.subtype !== "bot_message") {
+				// Mark this message as handled
+				handledMessages.add(message.ts);
+
 				await say({
 					text: `Hello <@${message.user}>!`,
 					blocks: [
@@ -31,6 +49,9 @@ module.exports = (app) => {
 		try {
 			// Only respond to messages from users, not the bot itself
 			if (message.subtype === undefined || message.subtype !== "bot_message") {
+				// Mark this message as handled
+				handledMessages.add(message.ts);
+
 				await say({
 					text: `You're welcome, <@${message.user}>!`,
 					blocks: [
@@ -62,6 +83,9 @@ module.exports = (app) => {
 					message.subtype === undefined ||
 					message.subtype !== "bot_message"
 				) {
+					// Mark this message as handled
+					handledMessages.add(message.ts);
+
 					const modelName = matches[1].toLowerCase();
 
 					// Store user preference
@@ -92,6 +116,11 @@ module.exports = (app) => {
 		try {
 			// Skip if message is from a bot or has specific subtypes
 			if (message.bot_id || message.subtype) {
+				return await next();
+			}
+
+			// Skip if this message has already been handled
+			if (handledMessages.has(message.ts)) {
 				return await next();
 			}
 
@@ -136,6 +165,9 @@ module.exports = (app) => {
 						modelName,
 					);
 					await say(formattedResponse);
+
+					// Mark message as handled
+					handledMessages.add(message.ts);
 
 					// Don't process further handlers
 					return;
