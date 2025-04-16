@@ -33,14 +33,14 @@ setInterval(() => {
 
 module.exports = (app) => {
 	// Listen for messages that contain "hello"
-	app.message(/\bhello\b|\bhi\b|\bhey\b/i, async ({ message, say }) => {
+	app.message(/\bhello\b|\bhi\b|\bhey\b/i, async ({ message, say, client }) => {
 		try {
 			// Only respond to messages from users, not the bot itself
 			if (message.subtype === undefined || message.subtype !== "bot_message") {
 				// Mark this message as handled
 				handledMessages.add(message.ts);
 
-				await say({
+				const response = {
 					text: `Hello <@${message.user}>!`,
 					blocks: [
 						{
@@ -51,7 +51,20 @@ module.exports = (app) => {
 							},
 						},
 					],
-				});
+				};
+
+				// Check if this message is part of a thread (likely in AI app container)
+				if (message.thread_ts) {
+					await client.chat.postMessage({
+						channel: message.channel,
+						thread_ts: message.thread_ts,
+						text: response.text,
+						blocks: response.blocks,
+					});
+				} else {
+					// For regular direct messages, use the say() function
+					await say(response);
+				}
 			}
 		} catch (error) {
 			console.error("Error handling hello message:", error);
@@ -59,14 +72,14 @@ module.exports = (app) => {
 	});
 
 	// Listen for messages that contain "thanks" or "thank you"
-	app.message(/thanks|thank you/i, async ({ message, say }) => {
+	app.message(/thanks|thank you/i, async ({ message, say, client }) => {
 		try {
 			// Only respond to messages from users, not the bot itself
 			if (message.subtype === undefined || message.subtype !== "bot_message") {
 				// Mark this message as handled
 				handledMessages.add(message.ts);
 
-				await say({
+				const response = {
 					text: `You're welcome, <@${message.user}>!`,
 					blocks: [
 						{
@@ -77,7 +90,20 @@ module.exports = (app) => {
 							},
 						},
 					],
-				});
+				};
+
+				// Check if this message is part of a thread (likely in AI app container)
+				if (message.thread_ts) {
+					await client.chat.postMessage({
+						channel: message.channel,
+						thread_ts: message.thread_ts,
+						text: response.text,
+						blocks: response.blocks,
+					});
+				} else {
+					// For regular direct messages, use the say() function
+					await say(response);
+				}
 			}
 		} catch (error) {
 			console.error("Error handling thanks message:", error);
@@ -87,7 +113,7 @@ module.exports = (app) => {
 	// Handle model selection messages
 	app.message(
 		/^use (claude|chatgpt|gemini)$/i,
-		async ({ message, say, matches }) => {
+		async ({ message, say, client, matches }) => {
 			try {
 				// Only respond to messages from users, not the bot itself
 				if (
@@ -105,7 +131,7 @@ module.exports = (app) => {
 						lastActive: Date.now(),
 					});
 
-					await say({
+					const response = {
 						text: `I'll use ${modelName.toUpperCase()} for your future questions.`,
 						blocks: [
 							{
@@ -116,7 +142,20 @@ module.exports = (app) => {
 								},
 							},
 						],
-					});
+					};
+
+					// Check if this message is part of a thread (likely in AI app container)
+					if (message.thread_ts) {
+						await client.chat.postMessage({
+							channel: message.channel,
+							thread_ts: message.thread_ts,
+							text: response.text,
+							blocks: response.blocks,
+						});
+					} else {
+						// For regular direct messages, use the say() function
+						await say(response);
+					}
 				}
 			} catch (error) {
 				console.error("Error handling model selection message:", error);
@@ -163,7 +202,18 @@ module.exports = (app) => {
 							"claude", // Default model for predefined responses
 						);
 
-						await say(formattedResponse);
+						// Check if this message is part of a thread (likely in AI app container)
+						if (message.thread_ts) {
+							await client.chat.postMessage({
+								channel: message.channel,
+								thread_ts: message.thread_ts,
+								text: formattedResponse.text,
+								blocks: formattedResponse.blocks,
+							});
+						} else {
+							// For regular direct messages, use the say() function
+							await say(formattedResponse);
+						}
 
 						// Mark message as handled
 						handledMessages.add(message.ts);
@@ -194,7 +244,19 @@ module.exports = (app) => {
 						blockKit,
 						modelName,
 					);
-					await say(formattedResponse);
+
+					// Check if this message is part of a thread (likely in AI app container)
+					if (message.thread_ts) {
+						await client.chat.postMessage({
+							channel: message.channel,
+							thread_ts: message.thread_ts,
+							text: formattedResponse.text,
+							blocks: formattedResponse.blocks,
+						});
+					} else {
+						// For regular direct messages, use the say() function
+						await say(formattedResponse);
+					}
 
 					// Mark message as handled
 					handledMessages.add(message.ts);
