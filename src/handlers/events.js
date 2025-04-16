@@ -1,6 +1,7 @@
 // Event handlers for Slack events
 const difyService = require("../utils/difyService");
 const blockKit = require("../utils/blockKit");
+const predefinedResponses = require("../utils/predefinedResponses");
 
 // Track handled events to prevent duplicate processing
 const handledEvents = new Set();
@@ -49,6 +50,26 @@ module.exports = (app) => {
 						},
 					],
 				});
+				return;
+			}
+
+			// Check for predefined responses
+			const predefinedResponse =
+				predefinedResponses.findPredefinedResponse(messageText);
+
+			if (predefinedResponse) {
+				// Log that we're using a predefined response
+				console.log(`Using predefined response for message: "${messageText}"`);
+
+				// Format and respond with the predefined answer
+				const formattedResponse = difyService.formatDifyResponse(
+					predefinedResponse,
+					blockKit,
+					"claude", // Default model for predefined responses
+				);
+
+				// Respond directly to the channel
+				await say(formattedResponse);
 				return;
 			}
 

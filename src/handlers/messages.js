@@ -1,9 +1,13 @@
 // Message handlers for Slack messages
 const difyService = require("../utils/difyService");
 const blockKit = require("../utils/blockKit");
+const predefinedResponses = require("../utils/predefinedResponses");
 
 // Track handled message IDs to prevent duplicate processing
 const handledMessages = new Set();
+
+// Store user model preferences - key: userId, value: model name
+const userModelPreferences = new Map();
 
 // Clean up old handled messages (keep only recent ones)
 setInterval(() => {
@@ -14,6 +18,16 @@ setInterval(() => {
 		for (let i = 0; i < toRemove; i++) {
 			handledMessages.delete(iterator.next().value);
 		}
+	}
+
+	// Clean up user model preferences for inactive users (keep for max 24 hours)
+	// Only run this cleanup occasionally (every 10 minutes)
+	if (Math.random() < 0.1) {
+		const now = Date.now();
+		const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000;
+
+		// If we added lastActive tracking, we could remove old entries
+		// For this update, we'll keep the preferences indefinitely since we can't track last activity
 	}
 }, 60000); // Clean up every minute
 
@@ -70,9 +84,6 @@ module.exports = (app) => {
 		}
 	});
 
-	// Store user model preferences - key: userId, value: model name
-	const userModelPreferences = new Map();
-
 	// Handle model selection messages
 	app.message(
 		/^use (claude|chatgpt|gemini)$/i,
@@ -88,8 +99,11 @@ module.exports = (app) => {
 
 					const modelName = matches[1].toLowerCase();
 
-					// Store user preference
-					userModelPreferences.set(message.user, modelName);
+					// Store user preference with timestamp
+					userModelPreferences.set(message.user, {
+						model: modelName,
+						lastActive: Date.now(),
+					});
 
 					await say({
 						text: `I'll use ${modelName.toUpperCase()} for your future questions.`,
@@ -133,8 +147,39 @@ module.exports = (app) => {
 				const isDM = conversationInfo.channel.is_im;
 
 				if (isDM) {
+					// Check for predefined responses
+					const predefinedResponse = predefinedResponses.findPredefinedResponse(
+						message.text,
+					);
+
+					if (predefinedResponse) {
+						// Log that we're using a predefined response
+						console.log(`Using predefined response for DM: "${message.text}"`);
+
+						// Format and respond with the predefined answer
+						const formattedResponse = difyService.formatDifyResponse(
+							predefinedResponse,
+							blockKit,
+							"claude", // Default model for predefined responses
+						);
+
+						await say(formattedResponse);
+
+						// Mark message as handled
+						handledMessages.add(message.ts);
+
+						// Don't process further handlers
+						return;
+					}
+
 					// Get user's preferred model or default to Claude
-					const modelName = userModelPreferences.get(message.user) || "claude";
+					let modelName = "claude"; // Default model
+					const userPref = userModelPreferences.get(message.user);
+					if (userPref?.model) {
+						modelName = userPref.model;
+						// Update last active timestamp
+						userPref.lastActive = Date.now();
+					}
 
 					// Send message to Dify with user's preferred model
 					const difyResponse = await difyService.sendChatMessage(
