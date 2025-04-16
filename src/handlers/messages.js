@@ -133,21 +133,6 @@ module.exports = (app) => {
 				const isDM = conversationInfo.channel.is_im;
 
 				if (isDM) {
-					// Show typing indicator
-					await client.chat.postMessage({
-						channel: message.channel,
-						text: "_Thinking..._",
-						blocks: [
-							{
-								type: "section",
-								text: {
-									type: "mrkdwn",
-									text: "_Thinking..._",
-								},
-							},
-						],
-					});
-
 					// Get user's preferred model or default to Claude
 					const modelName = userModelPreferences.get(message.user) || "claude";
 

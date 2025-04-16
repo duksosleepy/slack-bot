@@ -304,24 +304,6 @@ Has metadata: ${difyResponse.metadata ? "yes" : "no"}`);
 	// Add the answer
 	blocks.push(section(answerText));
 
-	// Add usage information if available
-	if (difyResponse.metadata?.usage) {
-		const usage = difyResponse.metadata.usage;
-		blocks.push(
-			divider(),
-			section(
-				`*Usage:* ${usage.total_tokens} tokens (${usage.prompt_tokens} prompt + ${usage.completion_tokens} completion)`,
-			),
-			section(`*Latency:* ${Math.round(usage.latency * 1000)}ms`),
-		);
-
-		console.log(`[DIFY FORMAT] Added usage info:
-Total tokens: ${usage.total_tokens}
-Prompt tokens: ${usage.prompt_tokens}
-Completion tokens: ${usage.completion_tokens}
-Latency: ${Math.round(usage.latency * 1000)}ms`);
-	}
-
 	// Add feedback buttons
 	blocks.push(
 		divider(),

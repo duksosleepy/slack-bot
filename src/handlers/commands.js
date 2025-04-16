@@ -79,12 +79,6 @@ module.exports = (app) => {
 				return;
 			}
 
-			// Show typing indicator
-			await respond({
-				text: "_Thinking..._",
-				response_type: "ephemeral",
-			});
-
 			// Send message to Dify with specified model
 			const difyResponse = await difyService.sendChatMessage(
 				query,
